@@ -1,0 +1,8 @@
+{
+  "name": "DIAAI V1.6 HSG GV",
+  "description": "1. Vờn bóng địa hình kinh điển: Dữ liệu BĐ học chính xác nhất VN\n",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
