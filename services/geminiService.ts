@@ -7,7 +7,7 @@
 import { GoogleGenAI, Type, GenerateContentResponse, Modality } from "@google/genai";
 import { DocumentChunk, Topic } from "../types";
 
-const getAI = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 let localKnowledgeBase: DocumentChunk[] = [];
 
@@ -102,18 +102,19 @@ export const generateGeographyAnswerStream = async (
 export const generateGeographyInfographic = async (userQuery: string, knowledgeText: string): Promise<string | null> => {
   const ai = getAI();
   
-  // Nâng cấp Prompt: Đảm bảo Hoàng Sa, Trường Sa và tính hài hòa khoa học
   const infographicPrompt = `
     Bạn là một chuyên gia đồ họa bản đồ học (Cartographic Architect). 
-    Hãy tạo một infographic chất lượng 4K giải thích về: "${userQuery}". 
+    Hãy tạo một infographic chất lượng cao giải thích về: "${userQuery}". 
     Dữ liệu nền tảng: "${knowledgeText}". 
     
-    YÊU CẦU BẮT BUỘC VỀ BẢN ĐỒ:
-    - Nếu có bản đồ Việt Nam, phải thể hiện ĐẦY ĐỦ và RÕ RÀNG vị trí của quần đảo Hoàng Sa và quần đảo Trường Sa.
-    - Ghi chú nhãn là: "Đặc khu Hoàng Sa" và "Đặc khu Trường Sa".
-    - Phong cách: Blueprint sạch sẽ, chuyên nghiệp, nét vẽ hài hòa, tối giản, mang tính giáo dục cao. 
-    - Ngôn ngữ: Tiếng Việt chuẩn.
-    - Tránh các chi tiết đồ họa quá phô trương, tập trung vào tính chính xác của dữ liệu địa lí.
+    YÊU CẦU BẢN ĐỒ & THIẾT KẾ:
+    - Thể hiện ĐẦY ĐỦ và CHÍNH XÁC chủ quyền biển đảo Việt Nam.
+    - Nhãn quần đảo: "Đặc khu Hoàng Sa" và "Đặc khu Trường Sa". 
+    - QUY TẮC NHÃN: TUYỆT ĐỐI KHÔNG vẽ khung nền hay box bao quanh các dòng chữ nhãn đảo. Chữ viết trực tiếp lên nền bản đồ một cách thanh thoát.
+    - MÀU SẮC: Màu chữ của "Đặc khu Hoàng Sa" và "Đặc khu Trường Sa" phải CÙNG MÀU với màu chữ tiêu đề chính của infographic để đảm bảo sự đồng nhất.
+    - CHỮ KÝ TÁC GIẢ: Ghi rõ dòng chữ "Th.s PVT THCS Hồng Hà, Ô Diên, Hà Nội" ở một góc trang trọng và tinh tế.
+    - PHONG CÁCH: Khoa học, nét vẽ hài hòa, không phô trương, bố cục rõ ràng, chuyên nghiệp.
+    - Ngôn ngữ: Tiếng Việt.
   `;
 
   try {

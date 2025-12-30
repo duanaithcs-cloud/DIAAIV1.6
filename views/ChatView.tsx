@@ -70,7 +70,6 @@ const ChatView: React.FC<ChatViewProps> = ({ onBack, isTracking, onAutoSave, res
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, isTyping, isDesigning, isScanningImage, retrievalStatus]);
 
-  // Setup Voice Recognition
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -267,7 +266,7 @@ const ChatView: React.FC<ChatViewProps> = ({ onBack, isTracking, onAutoSave, res
       await Promise.all([textPromise, imagePromise]);
       
       if (isTracking && onAutoSave) {
-        onAutoSave(currentInput || (currentFiles.length > 0 ? `Học từ ${currentFiles.length} tệp` : "Học từ ảnh chụp"), fullAssistantContent);
+        onAutoSave(currentInput || (currentFiles.length > 1 ? `Học từ ${currentFiles.length} tệp` : "Học từ học liệu"), fullAssistantContent);
       }
 
       setIsTyping(false);
@@ -279,9 +278,6 @@ const ChatView: React.FC<ChatViewProps> = ({ onBack, isTracking, onAutoSave, res
     }
   };
 
-  /**
-   * PHỤ TRỢ: XỬ LÝ ĐỊNH DẠNG BOLD TRONG VĂN BẢN BÌNH THƯỜNG
-   */
   const renderBoldParts = (text: string) => {
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, i) => {
@@ -292,36 +288,27 @@ const ChatView: React.FC<ChatViewProps> = ({ onBack, isTracking, onAutoSave, res
     });
   };
 
-  /**
-   * TRUNG TÂM XỬ LÝ NỘI DUNG VĂN BẢN (RAG RENDERER)
-   * 1. Xóa bỏ ký tự ### đầu dòng.
-   * 2. Phóng to (1.5x) và tô đậm tối đa cho các dòng tiêu mục để làm nổi bật ý chính.
-   */
   const renderContent = (content: string) => {
-    // Bước 1: Làm sạch các ký tự tiêu đề Markdown (#)
     const cleanedContent = content.replace(/^#+\s+/gm, '');
     const lines = cleanedContent.split('\n');
 
     return lines.map((line, lineIdx) => {
       if (!line.trim()) return <br key={lineIdx} />;
 
-      // Regex nhận diện tiêu mục ở đầu dòng: "1. " hoặc "a. "
       const bulletMatch = line.match(/^(\d+\.\s|[a-z]\.\s)(.*)/i);
 
       if (bulletMatch) {
         const bullet = bulletMatch[1];
         const rest = bulletMatch[2];
-
-        // Tự động phân tách tiêu đề nếu có dấu hai chấm ":"
         const colonIndex = rest.indexOf(':');
         
-        if (colonIndex !== -1 && colonIndex < 80) { // Tăng nhẹ giới hạn để bao quát tiêu đề dài
+        if (colonIndex !== -1 && colonIndex < 80) { 
           const title = rest.substring(0, colonIndex + 1);
           const body = rest.substring(colonIndex + 1);
           
           return (
             <div key={lineIdx} className="mb-6 leading-tight">
-              {/* PHÓNG TO 1.5x và VIẾT ĐẪM (FONT-BLACK) */}
+              {/* PHÓNG TO 1.5x và VIẾT ĐẪM (FONT-BLACK) THEO YÊU CẦU */}
               <span className="text-xl md:text-2xl font-black text-slate-950 dark:text-white inline-block mb-1">
                 {bullet}{title}
               </span>
@@ -331,7 +318,6 @@ const ChatView: React.FC<ChatViewProps> = ({ onBack, isTracking, onAutoSave, res
             </div>
           );
         } else {
-          // Nếu không có dấu hai chấm, làm nổi bật toàn bộ dòng tiêu mục với kích thước lớn
           return (
             <div key={lineIdx} className="mb-6">
               <span className="text-xl md:text-2xl font-black text-slate-950 dark:text-white leading-tight">
@@ -342,7 +328,6 @@ const ChatView: React.FC<ChatViewProps> = ({ onBack, isTracking, onAutoSave, res
         }
       }
 
-      // Render các dòng văn bản thông thường
       return (
         <div key={lineIdx} className="mb-2 text-slate-700 dark:text-slate-300 leading-relaxed text-[15px]">
           {renderBoldParts(line)}
@@ -466,145 +451,102 @@ const ChatView: React.FC<ChatViewProps> = ({ onBack, isTracking, onAutoSave, res
         </div>
       </main>
 
+      {/* FOOTER: SCIENTIFIC CONTROL HUB - OPTIMIZED FOR MOBILE */}
       <footer className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
         <div className="max-w-4xl mx-auto space-y-4">
           
+          {/* Previews Row */}
           <div className="flex flex-wrap gap-3 max-h-32 overflow-y-auto no-scrollbar">
             {imagePreview && (
               <div className="relative inline-block fade-up">
-                <div className="relative h-28 w-28 rounded-xl overflow-hidden border-primary shadow-xl border-2 transition-all">
+                <div className="relative h-20 w-20 rounded-xl overflow-hidden border-primary shadow-lg border-2 transition-all">
                   <img src={`data:${imagePreview.mimeType};base64,${imagePreview.data}`} className="h-full w-full object-cover" alt="Preview" />
-                  
-                  {/* SCANNING OVERLAY */}
                   {isScanningImage && (
                     <div className="absolute inset-0 bg-primary/10 backdrop-blur-[1px] flex items-center justify-center">
                         <div className="scan-line animate-scan"></div>
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/20 to-transparent"></div>
-                        <span className="text-[8px] font-black text-white bg-primary/90 px-2 py-1 rounded uppercase tracking-tighter shadow-md z-20">AI đang đọc ảnh...</span>
+                        <span className="text-[6px] font-black text-white bg-primary/90 px-1 rounded uppercase z-20">QUÉT...</span>
                     </div>
                   )}
-                  
-                  {!isScanningImage && (
-                    <div className="absolute inset-0 bg-green-500/10 flex items-center justify-center">
-                        <span className="text-[8px] font-black text-white bg-green-600 px-1 py-0.5 rounded uppercase tracking-tighter shadow-md z-20 flex items-center gap-0.5">
-                            <span className="material-symbols-outlined text-[8px]">check</span>
-                            Đã hiểu dữ liệu
-                        </span>
-                    </div>
-                  )}
-
                   <button 
                     onClick={() => setImagePreview(null)}
-                    className="absolute top-1 right-1 size-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md z-30"
+                    className="absolute top-0.5 right-0.5 size-4 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md z-30"
                   >
-                    <span className="material-symbols-outlined text-xs">close</span>
+                    <span className="material-symbols-outlined text-[10px]">close</span>
                   </button>
                 </div>
               </div>
             )}
-            {attachedFiles.map((file, index) => {
-              const isImage = file.mimeType.startsWith('image/');
-              return (
-                <div key={index} className="relative inline-block fade-up">
-                  {isImage ? (
-                    <div className="relative h-28 w-28 rounded-xl overflow-hidden border-primary shadow-xl border-2 transition-all">
-                      <img src={`data:${file.mimeType};base64,${file.data}`} className="h-full w-full object-cover" alt="Preview" />
-                      {isScanningImage && (
-                        <div className="absolute inset-0 bg-primary/10 backdrop-blur-[1px] flex items-center justify-center">
-                            <div className="scan-line animate-scan"></div>
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/20 to-transparent"></div>
-                            <span className="text-[8px] font-black text-white bg-primary/90 px-2 py-1 rounded uppercase tracking-tighter shadow-md z-20">AI đang đọc tệp...</span>
-                        </div>
-                      )}
-                      {!isScanningImage && (
-                        <div className="absolute inset-0 bg-green-500/10 flex items-center justify-center">
-                            <span className="text-[8px] font-black text-white bg-green-600 px-1 py-0.5 rounded uppercase tracking-tighter shadow-md z-20 flex items-center gap-0.5">
-                                <span className="material-symbols-outlined text-[8px]">check</span>
-                                Đã hiểu tệp
-                            </span>
-                        </div>
-                      )}
-                      <button 
-                        onClick={() => removeAttachedFile(index)}
-                        className="absolute top-1 right-1 size-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md z-30"
-                      >
-                        <span className="material-symbols-outlined text-xs">close</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3 bg-primary/5 border-2 border-primary rounded-xl px-4 py-3 shadow-md max-w-[200px]">
-                      <span className="material-symbols-outlined text-primary">{getFileIcon(file.mimeType)}</span>
-                      <span className="text-xs font-black truncate text-primary">{file.name}</span>
-                      <button 
-                        onClick={() => removeAttachedFile(index)}
-                        className="size-5 bg-primary text-white rounded-full flex items-center justify-center shadow-md ml-1"
-                      >
-                        <span className="material-symbols-outlined text-xs">close</span>
-                      </button>
-                    </div>
-                  )}
+            {attachedFiles.map((file, index) => (
+              <div key={index} className="relative inline-block fade-up">
+                <div className="flex items-center gap-2 bg-primary/5 border border-primary/30 rounded-lg px-2 py-1.5 shadow-sm max-w-[140px]">
+                  <span className="material-symbols-outlined text-primary text-sm">{getFileIcon(file.mimeType)}</span>
+                  <span className="text-[10px] font-black truncate text-primary">{file.name}</span>
+                  <button onClick={() => removeAttachedFile(index)} className="text-red-500 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-xs">close</span>
+                  </button>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
 
-          <div className="flex items-end gap-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <button 
-                onClick={toggleListening}
-                className={`p-2.5 rounded-xl transition-all border shadow-sm flex items-center justify-center relative ${isListening ? 'bg-red-500 text-white border-red-600 animate-pulse' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-primary border-slate-200 dark:border-slate-700'}`}
-                title="Giọng nói"
-              >
-                <span className="material-symbols-outlined">{isListening ? 'mic_active' : 'mic'}</span>
-              </button>
+          {/* SCIENTIFIC INPUT ARRANGEMENT: Nút gửi lùi vào trong, Mic bên trái */}
+          <div className="flex items-end gap-2 md:gap-3">
+            
+            {/* 1. VOICE BUTTON (Độc lập bên trái) */}
+            <button 
+              onClick={toggleListening}
+              className={`flex-none size-12 rounded-full transition-all border shadow-soft flex items-center justify-center shrink-0 ${isListening ? 'bg-red-500 text-white border-red-600 animate-pulse' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-primary border-slate-200 dark:border-slate-700'}`}
+              title="Giọng nói"
+            >
+              <span className="material-symbols-outlined text-2xl">{isListening ? 'mic_active' : 'mic'}</span>
+            </button>
 
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-primary hover:bg-primary/10 transition-all border border-slate-200 dark:border-slate-700 shadow-sm"
-                title="Chụp ảnh học liệu"
-              >
-                <span className="material-symbols-outlined">add_a_photo</span>
-                <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageCapture} />
-              </button>
+            {/* 2. CONSOLIDATED PILL HUB (Tất cả công cụ và nút gửi lùi vào trong) */}
+            <div className="flex-1 flex items-end bg-slate-50 dark:bg-slate-800/50 rounded-[28px] border border-slate-200 dark:border-slate-700 p-1.5 transition-all focus-within:border-primary/50 shadow-inner">
+              
+              {/* Media Sub-Group (Trái) */}
+              <div className="flex items-center gap-0.5 mb-0.5 px-0.5">
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="size-9 rounded-full text-slate-400 hover:text-primary hover:bg-primary/10 transition-all flex items-center justify-center"
+                  title="Chụp ảnh"
+                >
+                  <span className="material-symbols-outlined text-xl">add_a_photo</span>
+                  <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageCapture} />
+                </button>
+                <button 
+                  onClick={() => docInputRef.current?.click()}
+                  className="size-9 rounded-full text-slate-400 hover:text-primary hover:bg-primary/10 transition-all flex items-center justify-center"
+                  title="Tải tệp"
+                >
+                  <span className="material-symbols-outlined text-xl">attach_file</span>
+                  <input ref={docInputRef} type="file" multiple accept=".pdf,.docx,.pptx,.txt,.doc,.jpg,.jpeg,.png" className="hidden" onChange={handleDocUpload} />
+                </button>
+              </div>
 
-              <button 
-                onClick={() => docInputRef.current?.click()}
-                className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-primary hover:bg-primary/10 transition-all border border-slate-200 dark:border-slate-700 shadow-sm"
-                title="Tải tệp đính kèm"
-              >
-                <span className="material-symbols-outlined">attach_file</span>
-                <input 
-                  ref={docInputRef} 
-                  type="file" 
-                  multiple
-                  accept=".pdf,.docx,.pptx,.txt,.doc,.jpg,.jpeg,.png" 
-                  className="hidden" 
-                  onChange={handleDocUpload} 
-                />
-              </button>
-            </div>
+              {/* Text Area (Trung tâm) */}
+              <textarea 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+                className="flex-1 bg-transparent border-none py-2 px-1 focus:ring-0 text-[15px] max-h-32 resize-none dark:text-white outline-none font-medium placeholder:text-slate-400" 
+                placeholder={isListening ? "Đang nghe..." : "Hỏi Địa lí..."} 
+                rows={1}
+              />
 
-            <div className="flex flex-col flex-1">
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 flex items-end gap-2 focus-within:border-primary/50 transition-all shadow-inner">
-                <textarea 
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-                  className="flex-1 bg-transparent border-none p-0 focus:ring-0 text-[15px] max-h-32 resize-none dark:text-white outline-none" 
-                  placeholder={isListening ? "Đang nghe..." : (isScanningImage ? "AI đang đọc dữ liệu..." : "Hỏi Địa lí với AI")} 
-                  rows={1}
-                />
+              {/* 3. SEND BUTTON (Lùi vào trong để an toàn, không bị che khuất) */}
+              <div className="pl-1 pr-1.5 pb-0.5">
                 <button 
                   onClick={handleSend} 
                   disabled={isTyping || isScanningImage || (!input.trim() && !imagePreview && attachedFiles.length === 0)} 
-                  className="p-2 rounded-xl bg-primary text-white disabled:opacity-30 transition-all active:scale-95 shadow-glow"
+                  className="size-10 rounded-full bg-primary text-white disabled:opacity-30 transition-all active:scale-90 shadow-glow flex items-center justify-center"
                 >
-                  <span className="material-symbols-outlined font-bold">send</span>
+                  <span className="material-symbols-outlined font-bold text-[20px]">send</span>
                 </button>
               </div>
-              <p className="text-[10px] text-slate-400 mt-2 ml-2 font-medium">Dựa trên học liệu đã tải.</p>
             </div>
           </div>
+          <p className="text-[10px] text-slate-400 text-center font-bold uppercase tracking-widest opacity-60">Tri thức địa lí số • Th.s PVT</p>
         </div>
       </footer>
     </div>
